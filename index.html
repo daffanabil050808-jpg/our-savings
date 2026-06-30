@@ -1,0 +1,1752 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Our Savings - Premium Couple App v7.0</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0f0c1b">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        /* CSS VARIABLES SYSTEM */
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f0c20 0%, #15102a 50%, #060409 100%);
+            --card-bg: rgba(30, 25, 53, 0.55);
+            --card-border: rgba(255, 255, 255, 0.07);
+            --primary-glow: rgba(255, 96, 126, 0.25);
+            
+            --accent-daffa: #38b6ff;
+            --accent-khaira: #ff607e;
+            --accent-joint: #00d26a;
+            --accent-expense: #ff4747;
+            
+            --text-main: #ffffff;
+            --text-muted: #a5a1b8;
+            --nav-bg: rgba(21, 16, 38, 0.85);
+            --blur-radius: 20px;
+        }
+
+        /* THEME CODES */
+        [data-theme="galaxy"] {
+            --bg-gradient: linear-gradient(135deg, #020010 0%, #09092e 50%, #010107 100%);
+            --card-bg: rgba(16, 16, 48, 0.6);
+            --accent-khaira: #d946ef;
+            --primary-glow: rgba(217, 70, 239, 0.25);
+        }
+        [data-theme="sakura"] {
+            --bg-gradient: linear-gradient(135deg, #2a1118 0%, #441c27 50%, #15050a 100%);
+            --card-bg: rgba(82, 33, 47, 0.5);
+            --accent-khaira: #ff7ebb;
+            --primary-glow: rgba(255, 126, 187, 0.25);
+        }
+        [data-theme="ocean"] {
+            --bg-gradient: linear-gradient(135deg, #031424 0%, #07243a 50%, #010811 100%);
+            --card-bg: rgba(11, 47, 75, 0.55);
+            --accent-khaira: #2dd4bf;
+            --primary-glow: rgba(45, 212, 191, 0.25);
+        }
+        [data-theme="midnight"] {
+            --bg-gradient: linear-gradient(135deg, #121212 0%, #1e1e1e 50%, #080808 100%);
+            --card-bg: rgba(35, 35, 35, 0.6);
+            --accent-khaira: #ffffff;
+            --text-muted: #888888;
+            --primary-glow: rgba(255, 255, 255, 0.1);
+        }
+
+        /* CORE RESET & LAYOUT */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg-gradient); color: var(--text-main); min-height: 100vh; overflow-x: hidden; padding-bottom: 90px; }
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(var(--blur-radius));
+            -webkit-backdrop-filter: blur(var(--blur-radius));
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .active-press:active { transform: scale(0.97); }
+
+        /* SPLASH SCREEN */
+        #splash-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #0f0c20; z-index: 10000; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; transition: opacity 0.6s ease;
+        }
+        .splash-heart { font-size: 60px; animation: heartbeat 1.2s infinite; filter: drop-shadow(0 0 20px var(--accent-khaira)); }
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+
+        /* BACKGROUND HEARTS */
+        .hearts-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1; overflow: hidden; }
+        .falling-heart { position: absolute; color: rgba(255, 96, 126, 0.15); animation: fall linear infinite; font-size: 14px; }
+        @keyframes fall {
+            0% { transform: translateY(-20px) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(105vh) rotate(360deg); opacity: 0; }
+        }
+
+        .app-shell { width: 100%; max-width: 480px; margin: 0 auto; padding: 16px; }
+
+        /* HEADER PROFILE */
+        .profile-header { position: relative; border-radius: 28px; overflow: hidden; margin-bottom: 24px; height: 180px; box-shadow: 0 15px 30px rgba(0,0,0,0.4); }
+        .header-cover { width: 100%; height: 100%; object-fit: cover; }
+        .header-gradient { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(15,12,32,1)); }
+        .profile-avatars { position: absolute; bottom: 15px; left: 20px; display: flex; align-items: center; gap: 12px; }
+        .avatar-wrap { width: 55px; height: 55px; border-radius: 50%; border: 2.5px solid #fff; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.3); background-color: #333; }
+        .avatar-wrap img { width: 100%; height: 100%; object-fit: cover; }
+        .couple-meta h2 { font-size: 18px; font-weight: 700; }
+        .couple-meta p { font-size: 11px; color: var(--text-muted); font-style: italic; }
+
+        /* APP PAGES SYSTEM */
+        .app-page { display: none; animation: pageIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .app-page.active-page { display: block; }
+        @keyframes pageIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+        .main-balance { font-size: 36px; font-weight: 800; text-align: center; margin: 8px 0; background: linear-gradient(90deg, #fff, var(--text-muted)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .versus-progress { height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; display: flex; margin: 15px 0; }
+        .vs-df { background: var(--accent-daffa); width: 50%; transition: width 0.5s ease; }
+        .vs-kh { background: var(--accent-khaira); width: 50%; transition: width 0.5s ease; }
+
+        .form-group { display: flex; flex-direction: column; gap: 12px; margin-top: 15px; }
+        .input-premium { background: rgba(0,0,0,0.25); border: 1px solid var(--card-border); padding: 14px; border-radius: 16px; color: #fff; font-size: 14px; outline: none; transition: all 0.3s; }
+        .input-premium:focus { border-color: var(--accent-khaira); box-shadow: 0 0 10px rgba(255,96,126,0.2); }
+        
+        .selector-row { display: flex; gap: 10px; background: rgba(0,0,0,0.2); padding: 4px; border-radius: 14px; }
+        .btn-select { flex: 1; padding: 12px; border: none; background: transparent; color: var(--text-muted); border-radius: 10px; font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s; }
+        .btn-select.active { background: var(--card-bg); color: #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+
+        .btn-action { background: linear-gradient(135deg, var(--accent-khaira), #e04060); color: #fff; border: none; padding: 15px; border-radius: 16px; font-weight: 700; cursor: pointer; text-align: center; box-shadow: 0 6px 20px var(--primary-glow); }
+
+        /* BOTTOM NAVIGATION BAR */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--nav-bg); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border-top: 1px solid var(--card-border); padding: 10px 12px 24px 12px; z-index: 9999; display: flex; justify-content: space-around; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); text-decoration: none; font-size: 10px; font-weight: 500; gap: 4px; transition: color 0.3s; cursor: pointer; }
+        .nav-item.active { color: var(--accent-khaira); }
+        .nav-item svg { width: 22px; height: 22px; fill: currentColor; transition: transform 0.2s; }
+        .nav-item:active svg { transform: scale(0.85); }
+
+        /* DIARY & MEMORIES SPECIFIC */
+        .diary-card { background: rgba(255,255,255,0.02); border: 1px solid var(--card-border); border-radius: 18px; padding: 16px; margin-bottom: 12px; }
+        .diary-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); margin-bottom: 8px; }
+        .mood-badge { background: rgba(255,255,255,0.07); padding: 2px 8px; border-radius: 20px; color: #fff; }
+        .diary-media-grid { display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; }
+        .diary-img { width: 70px; height: 70px; object-fit: cover; border-radius: 10px; cursor: pointer; }
+
+        .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .gallery-item { aspect-ratio: 1; border-radius: 14px; overflow: hidden; position: relative; border: 1px solid var(--card-border); }
+        .gallery-item img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* WISHLIST PROGRESS PACKS */
+        .wish-item { margin-bottom: 15px; }
+        .wish-header { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
+        .wish-bar { height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; }
+        .wish-fill { height: 100%; background: linear-gradient(90deg, #ff9f43, var(--accent-khaira)); width: 0%; transition: width 0.6s; }
+
+        /* TOAST NOTIFICATION */
+        .toast-box { position: fixed; top: 30px; left: 50%; transform: translateX(-50%) translateY(-20px); opacity: 0; background: rgba(15, 12, 32, 0.9); border: 1px solid var(--accent-khaira); padding: 12px 24px; border-radius: 30px; font-size: 13px; z-index: 100000; transition: all 0.3s ease; pointer-events: none; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        .toast-box.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        /* FULLSCREEN PREVIEW */
+        .fullscreen-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 11000; display: none; justify-content: center; align-items: center; padding: 20px; }
+        .fullscreen-modal img { max-width: 100%; max-height: 80vh; border-radius: 12px; }
+
+        .music-widget { position: fixed; bottom: 100px; right: 20px; width: 42px; height: 42px; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 50%; display: flex; justify-content: center; align-items: center; z-index: 999; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .empty-state { text-align: center; padding: 30px 10px; color: var(--text-muted); font-size: 13px; }
+        .empty-state-icon { font-size: 40px; margin-bottom: 8px; opacity: 0.6; }
+        
+        /* SEARCH BOX CONTAINER */
+        .search-container { position: relative; display: flex; align-items: center; gap: 8px; margin-top: 10px; margin-bottom: 12px; }
+        .btn-calendar-trigger { background: rgba(255, 255, 255, 0.05); border: 1px solid var(--card-border); padding: 12px; border-radius: 16px; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; transition: all 0.3s; width: 48px; height: 48px; }
+        .btn-calendar-trigger:hover { border-color: var(--accent-khaira); background: rgba(255, 96, 126, 0.1); }
+        .hidden-date-picker { position: absolute; right: 0; opacity: 0; width: 48px; height: 48px; cursor: pointer; pointer-events: auto; }
+        
+        .active-filter-badge { display: none; justify-content: space-between; align-items: center; margin-top: -6px; margin-bottom: 12px; background: rgba(255,96,126,0.15); padding: 6px 12px; border-radius: 8px; font-size: 11px; color: var(--accent-khaira); }
+
+        /* 1. PREMIUM BLUR & GLASSMORPHISM EXTENSIONS */
+        .premium-glass {
+            background: rgba(255, 255, 255, 0.03) !important;
+            backdrop-filter: blur(30px) saturate(180%) !important;
+            -webkit-backdrop-filter: blur(30px) saturate(180%) !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        }
+
+        /* 2. RIPPLE & ADVANCED MICRO-INTERACTION EFFECTS */
+        .v7-ripple-btn {
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s;
+        }
+        .v7-ripple-btn:active {
+            transform: scale(0.96) !important;
+        }
+        .v7-ripple-span {
+            position: absolute;
+            border-radius: 50%;
+            transform: scale(0);
+            animation: rippleEffect 0.5s linear;
+            background: rgba(255, 255, 255, 0.35);
+            pointer-events: none;
+        }
+        @keyframes rippleEffect {
+            to { transform: scale(4); opacity: 0; }
+        }
+
+        /* 3. CANVAS BACKGROUND & INTERACTIVE ENGINE */
+        #v7-interactive-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -2;
+            pointer-events: auto;
+        }
+
+        /* 4. MODERN POPUP & BOTTOM SHEET UI */
+        .v7-popup-backdrop {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+            z-index: 20000; display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+            padding: 20px; backdrop-filter: blur(8px);
+        }
+        .v7-popup-backdrop.show { opacity: 1; pointer-events: auto; }
+        .v7-popup-container {
+            background: rgba(20, 16, 38, 0.95); border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 28px; padding: 24px; width: 100%; max-width: 400px;
+            transform: scale(0.85); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            color: #fff; box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+        }
+        .v7-popup-backdrop.show .v7-popup-container { transform: scale(1); }
+
+        .v7-bottom-sheet-backdrop {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+            z-index: 19000; display: flex; align-items: flex-end;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+        .v7-bottom-sheet-backdrop.show { opacity: 1; pointer-events: auto; }
+        .v7-bottom-sheet {
+            background: rgba(23, 18, 43, 0.98); border-top: 1px solid rgba(255,255,255,0.15);
+            border-top-left-radius: 32px; border-top-right-radius: 32px;
+            width: 100%; max-height: 85vh; overflow-y: auto; padding: 24px;
+            transform: translateY(100%); transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .v7-bottom-sheet-backdrop.show .v7-bottom-sheet { transform: translateY(0); }
+        .v7-sheet-handle { width: 40px; height: 5px; background: rgba(255,255,255,0.2); border-radius: 3px; margin: -10px auto 15px auto; }
+
+        /* 5. SECURITY PIN ARTIFACTS */
+        #v7-security-screen {
+            position: fixed; inset: 0; background: #0c0919; z-index: 99999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: transform 0.5s cubic-bezier(0.76, 0, 0.24, 1);
+        }
+        .v7-pin-dot-row { display: flex; gap: 20px; margin: 30px 0; }
+        .v7-pin-dot { width: 16px; height: 16px; border: 2px solid var(--accent-khaira); border-radius: 50%; transition: all 0.2s; }
+        .v7-pin-dot.filled { background: var(--accent-khaira); box-shadow: 0 0 15px var(--accent-khaira); }
+        .v7-pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; width: 100%; max-width: 300px; }
+        .v7-pin-btn {
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 50%; aspect-ratio: 1; display: flex; align-items: center;
+            justify-content: center; font-size: 22px; font-weight: 700; color: #fff;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .v7-pin-btn:active { background: rgba(255,96,126,0.2); border-color: var(--accent-khaira); }
+
+        /* 6. MUSIC PLAYER DOCK ENHANCEMENTS */
+        .v7-music-bar { display: flex; align-items: center; gap: 8px; width: 100%; background: rgba(0,0,0,0.3); padding: 6px 12px; border-radius: 12px; margin-top: 8px; }
+        .v7-slider-premium { -webkit-appearance: none; width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; outline: none; }
+        .v7-slider-premium::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; background: var(--accent-khaira); border-radius: 50%; cursor: pointer; box-shadow: 0 0 8px var(--accent-khaira); }
+
+        /* 7. CARD FLOATING BUTTON ANIMATION */
+        .v7-fab-container { position: fixed; bottom: 100px; left: 20px; z-index: 999; display: flex; flex-direction: column; gap: 10px; }
+        .v7-fab-btn { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #7000ff, #aa00ff); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 8px 20px rgba(112,0,255,0.4); cursor: pointer; }
+        
+        /* 8. HOVER AND FOCUS MACROS */
+        .glass-card:hover { transform: translateY(-3px); box-shadow: 0 16px 45px rgba(0,0,0,0.4); }
+        .v7-card-anim { animation: pageIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+        /* 9. GLOBAL CALENDAR GRID MATRIX */
+        .v7-calendar-wrapper { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; margin-top: 12px; }
+        .v7-calendar-day-head { font-size: 11px; color: var(--text-muted); font-weight: 700; padding: 4px 0; }
+        .v7-calendar-cell { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; border-radius: 8px; background: rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.02); position: relative; cursor: pointer; }
+        .v7-calendar-cell.v7-has-data { border-color: rgba(255,96,126,0.4); background: rgba(255,96,126,0.08); }
+        .v7-calendar-cell.v7-today { background: var(--accent-daffa) !important; color: #000 !important; font-weight: 800; }
+        .v7-calendar-dot { width: 4px; height: 4px; background: var(--accent-khaira); border-radius: 50%; position: absolute; bottom: 3px; }
+    </style>
+</head>
+<body>
+
+<div id="v7-security-screen">
+    <div class="splash-heart">🔒</div>
+    <h3 style="margin-top: 15px; font-weight: 700; letter-spacing: 1px; color:#fff;">PIN KEAMANAN PREMIUM</h3>
+    <p style="font-size: 11px; color: var(--text-muted); margin-top: 5px;">Masukkan 6 Digit PIN Akses Aplikasi</p>
+    <div class="v7-pin-dot-row">
+        <div class="v7-pin-dot" id="v7-dot-0"></div>
+        <div class="v7-pin-dot" id="v7-dot-1"></div>
+        <div class="v7-pin-dot" id="v7-dot-2"></div>
+        <div class="v7-pin-dot" id="v7-dot-3"></div>
+        <div class="v7-pin-dot" id="v7-dot-4"></div>
+        <div class="v7-pin-dot" id="v7-dot-5"></div>
+    </div>
+    <div class="v7-pin-pad">
+        <div class="v7-pin-btn" onclick="v7PressPin('1')">1</div>
+        <div class="v7-pin-btn" onclick="v7PressPin('2')">2</div>
+        <div class="v7-pin-btn" onclick="v7PressPin('3')">3</div>
+        <div class="v7-pin-btn" onclick="v7PressPin('4')">4</div>
+        <div class="v7-pin-btn" onclick="v7PressPin('5')">5</div>
+        <div class="v7-pin-btn" onclick="v7PressPin('6')">6</div>
+        <div class="v7-pin-btn" onclick="v7PressPin('7')">7</div>
+        <div class="v7-pin-btn" onclick="v7PressPin('8')">8</div>
+        <div class="v7-pin-btn" onclick="v7PressPin('9')">9</div>
+        <div class="v7-pin-btn" style="background:transparent; border:none; font-size:14px; color:var(--accent-expense);" onclick="v7ClearPin()">Reset</div>
+        <div class="v7-pin-btn" onclick="v7PressPin('0')">0</div>
+        <div class="v7-pin-btn" style="background:transparent; border:none; font-size:14px; color:var(--text-muted);" onclick="v7DeletePin()">✕</div>
+    </div>
+</div>
+
+<div id="splash-screen">
+    <div class="splash-heart">💖</div>
+    <h2 style="margin-top: 15px; font-weight: 700; letter-spacing: 1px;">OUR SAVINGS</h2>
+    <p style="font-size: 11px; color: var(--text-muted); margin-top: 5px;">Memuat Data Kebahagiaan...</p>
+</div>
+
+<canvas id="v7-interactive-canvas"></canvas>
+<div class="hearts-layer" id="live-hearts-container"></div>
+
+<audio id="global-audio-player" src="lagu-couple.mp3" loop></audio>
+<div class="music-widget v7-ripple-btn" id="music-node" onclick="handleMusicToggle()">🎵</div>
+
+<div class="v7-fab-container">
+    <div class="v7-fab-btn v7-ripple-btn" title="Global Search" onclick="v7OpenBottomSheet('v7-sheet-search')">🔍</div>
+    <div class="v7-fab-btn v7-ripple-btn" title="Export/Import Data" onclick="v7OpenBottomSheet('v7-sheet-backup')">💾</div>
+</div>
+
+<div class="v7-bottom-sheet-backdrop" id="v7-sheet-search" onclick="v7CloseBottomSheet('v7-sheet-search')">
+    <div class="v7-bottom-sheet" onclick="event.stopPropagation()">
+        <div class="v7-sheet-handle"></div>
+        <h3 style="margin-bottom:12px; font-size:16px;">🔍 Global Deep Search Engine</h3>
+        <input type="text" class="input-premium" id="v7-global-search-input" placeholder="Cari transaksi, diary, impian secara universal..." oninput="v7ExecuteGlobalSearch()" style="width:100%;">
+        <div id="v7-global-search-results" style="margin-top:15px; display:flex; flex-direction:column; gap:10px; max-height:50vh; overflow-y:auto;">
+            <p style="text-align:center; color:var(--text-muted); font-size:12px; padding:20px;">Masukkan kata kunci pencarian...</p>
+        </div>
+    </div>
+</div>
+
+<div class="v7-bottom-sheet-backdrop" id="v7-sheet-backup" onclick="v7CloseBottomSheet('v7-sheet-backup')">
+    <div class="v7-bottom-sheet" onclick="event.stopPropagation()">
+        <div class="v7-sheet-handle"></div>
+        <h3 style="margin-bottom:6px; font-size:16px;">💾 Manajemen Ekspor & Backup Data</h3>
+        <p style="font-size:11px; color:var(--text-muted); margin-bottom:15px;">Simpan kenangan dan data keuangan Anda secara aman ke penyimpanan lokal.</p>
+        
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            <button class="btn-action v7-ripple-btn" onclick="v7ExportData('pdf')" style="background:linear-gradient(135deg, #ff416c, #ff4b2b); font-size:13px; padding:12px;">📄 Export Semua ke Dokumen PDF</button>
+            <button class="btn-action v7-ripple-btn" onclick="v7ExportData('excel')" style="background:linear-gradient(135deg, #11998e, #38ef7d); font-size:13px; padding:12px;">📊 Export Riwayat Uang ke Excel (XLSX)</button>
+            <button class="btn-action v7-ripple-btn" onclick="v7ExportData('json')" style="background:linear-gradient(135deg, #2193b0, #6dd5ed); font-size:13px; padding:12px;">📁 Download Raw File Backup (JSON)</button>
+            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.1); margin:10px 0;">
+            <h4 style="font-size:13px; margin-bottom:4px;">📥 Import System Restore</h4>
+            <input type="file" id="v7-import-file-field" accept=".json" class="input-premium" style="width:100%; padding:8px; font-size:11px;">
+            <button class="btn-action v7-ripple-btn" onclick="v7ImportDataEngine()" style="background:var(--card-bg); border:1px solid rgba(255,255,255,0.2); margin-top:4px; font-size:13px; padding:12px;">Upload & Sinkronisasi Cloud</button>
+        </div>
+    </div>
+</div>
+
+<div class="v7-bottom-sheet-backdrop" id="v7-sheet-editor" onclick="v7CloseBottomSheet('v7-sheet-editor')">
+    <div class="v7-bottom-sheet" onclick="event.stopPropagation()">
+        <div class="v7-sheet-handle"></div>
+        <h3 id="v7-editor-title" style="margin-bottom:15px; font-size:16px;">✏️ Perbarui Data</h3>
+        <div id="v7-editor-form-fields" style="display:flex; flex-direction:column; gap:12px;"></div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:20px;">
+            <button class="btn-action v7-ripple-btn" id="v7-editor-delete-btn" style="background:var(--accent-expense);">Hapus Data</button>
+            <button class="btn-action v7-ripple-btn" id="v7-editor-save-btn" style="background:var(--accent-joint);">Simpan Perubahan</button>
+        </div>
+    </div>
+</div>
+
+<div class="app-shell" id="v7-printable-area">
+    <div class="profile-header glass-card premium-glass v7-card-anim">
+        <img class="header-cover" id="dom-header-img" src="foto-couple.jpg" alt="Cover">
+        <div class="header-gradient"></div>
+        <div class="profile-avatars">
+            <div class="avatar-wrap" style="border-color: var(--accent-daffa);"><img id="dom-pfp-daffa" src="foto-daffa.jpg" alt="Daffa"></div>
+            <div class="avatar-wrap" style="margin-left: -20px; border-color: var(--accent-khaira);"><img id="dom-pfp-khaira" src="foto-khaira.jpg" alt="Khaira"></div>
+            <div class="couple-meta">
+                <h2 id="dom-couple-name">Daffa & Khaira</h2>
+                <p id="dom-couple-quote">"Menabung bersama demi masa depan indah kita berdua."</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-page active-page v7-card-anim" id="page-home">
+        <div class="glass-card premium-glass" style="padding:16px; margin-bottom:16px; display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div style="background:rgba(0,0,0,0.2); padding:12px; border-radius:16px;">
+                <p style="font-size:10px; color:var(--text-muted);">Rata-rata Setoran</p>
+                <h4 id="v7-widget-avg-deposit" style="font-size:14px; color:var(--accent-joint); margin-top:2px;">Rp 0</h4>
+            </div>
+            <div style="background:rgba(0,0,0,0.2); padding:12px; border-radius:16px;">
+                <p style="font-size:10px; color:var(--text-muted);">Total Pengeluaran</p>
+                <h4 id="v7-widget-total-expense" style="font-size:14px; color:var(--accent-expense); margin-top:2px;">Rp 0</h4>
+            </div>
+        </div>
+
+        <div class="glass-card premium-glass">
+            <h3 style="font-size: 14px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 1px; text-align: center;">Total Tabungan</h3>
+            <div class="main-balance" id="dom-total-all">Rp 0</div>
+            
+            <div style="display: flex; justify-content: space-between; margin-top: 15px;">
+                <div>
+                    <p style="font-size: 11px; color: var(--text-muted);">Tabungan Daffa</p>
+                    <h4 style="color: var(--accent-daffa)" id="dom-total-df">Rp 0</h4>
+                </div>
+                <div style="text-align: right;">
+                    <p style="font-size: 11px; color: var(--text-muted);">Tabungan Khaira</p>
+                    <h4 style="color: var(--accent-khaira)" id="dom-total-kh">Rp 0</h4>
+                </div>
+            </div>
+
+            <div class="versus-progress">
+                <div class="vs-df" id="dom-vs-df"></div>
+                <div class="vs-kh" id="dom-vs-kh"></div>
+            </div>
+            <div style="font-size: 12px; display: flex; justify-content: space-between; margin-top: 15px; background: rgba(0,0,0,0.15); padding: 12px; border-radius: 12px;">
+                <span>🎯 Target Utama:</span>
+                <span id="dom-target-label" style="font-weight: 700;">Rp 50.000.000</span>
+            </div>
+        </div>
+
+        <div class="glass-card premium-glass">
+            <h3>⏳ Hubungan & Target Tracker</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: center; margin-top:10px;">
+                <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 14px;">
+                    <p style="font-size: 10px; color: var(--text-muted);">Anniversary</p>
+                    <h4 id="dom-cd-anniv" style="font-size: 15px; margin-top: 4px; color: var(--accent-khaira);">0 Hari Lagi</h4>
+                </div>
+                <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 14px;">
+                    <p style="font-size: 10px; color: var(--text-muted);">Target Dana</p>
+                    <h4 id="dom-cd-target" style="font-size: 15px; margin-top: 4px; color: var(--accent-joint);">75% Tercapai</h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card premium-glass">
+            <h3>💌 Love Notes Kontemporer</h3>
+            <div class="search-container">
+                <input type="text" class="input-premium" id="input-ln-search" placeholder="🔍 Cari teks kata kunci pesan..." style="flex: 1; padding: 12px;" oninput="filterLoveNotes()">
+                <button class="btn-calendar-trigger active-press v7-ripple-btn">
+                    📅
+                    <input type="date" class="hidden-date-picker" id="search-ln-date" onchange="filterLoveNotesByCalendar(this.value)">
+                </button>
+            </div>
+            <div id="filter-active-status" class="active-filter-badge">
+                <span id="filter-status-text">Filter Tanggal Aktif</span>
+                <span onclick="resetCalendarFilter()" style="cursor: pointer; font-weight: bold; text-decoration: underline;">Reset ✕</span>
+            </div>
+            <div id="dom-lovenotes-list" style="margin: 12px 0; display: flex; flex-direction: column; gap: 8px;"></div>
+            
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+                <input type="text" class="input-premium" id="input-ln-text" placeholder="Tulis catatan cinta manis hari ini..." style="padding: 12px; font-size: 13px;">
+                <button class="btn-action active-press v7-ripple-btn" onclick="saveLoveNote()" style="padding: 12px;">Kirim Catatan Ke Sisi Pasangan 💖</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-page v7-card-anim" id="page-savings">
+        <div class="glass-card premium-glass">
+            <h3>✍️ Catat Transaksi Baru</h3>
+            <div class="form-group">
+                <div class="selector-row">
+                    <button class="btn-select active v7-ripple-btn" id="ts-setor" onclick="switchTxType('masuk')">Setor Tabungan 📈</button>
+                    <button class="btn-select v7-ripple-btn" id="ts-tarik" onclick="switchTxType('keluar')">Tarik Dana 📉</button>
+                </div>
+                <div class="selector-row" id="row-penyetor-shell">
+                    <button class="btn-select active v7-ripple-btn" id="tp-daffa" onclick="switchTxUser('Daffa')">Daffa</button>
+                    <button class="btn-select v7-ripple-btn" id="tp-khaira" onclick="switchTxUser('Khaira')">Khaira</button>
+                </div>
+                <input type="number" class="input-premium" id="tx-nominal" placeholder="Nominal Uang (Rp)">
+                <input type="text" class="input-premium" id="tx-catatan" placeholder="Keterangan Transaksi">
+                <input type="date" class="input-premium" id="tx-tanggal">
+                <button class="btn-action active-press v7-ripple-btn" onclick="executeTxSave()">Simpan Transaksi Ke Cloud</button>
+            </div>
+        </div>
+
+        <div class="glass-card premium-glass">
+            <h3>📜 Riwayat Finansial & Filter</h3>
+            <div style="display: flex; gap: 8px; margin: 12px 0;">
+                <select class="input-premium" id="f-bulan" onchange="renderFinancials()" style="flex: 1; padding: 8px; font-size: 12px;">
+                    <option value="all">Semua Bulan</option>
+                    <option value="0">Januari</option><option value="1">Februari</option><option value="2">Maret</option>
+                    <option value="3">April</option><option value="4">Mei</option><option value="5">Juni</option>
+                    <option value="6">Juli</option><option value="7">Agustus</option><option value="8">September</option>
+                    <option value="9">Oktober</option><option value="10">November</option><option value="11">Desember</option>
+                </select>
+                <select class="input-premium" id="f-tahun" onchange="renderFinancials()" style="flex: 1; padding: 8px; font-size: 12px;">
+                    <option value="all">Semua Tahun</option>
+                    <option value="2025">2025</option><option value="2026">2026</option><option value="2027">2027</option>
+                </select>
+            </div>
+            <div id="dom-financial-container" style="display: flex; flex-direction: column; gap: 10px;"></div>
+        </div>
+    </div>
+
+    <div class="app-page v7-card-anim" id="page-diary">
+        <div class="glass-card premium-glass">
+            <h3>📝 Couple Diary Lengkap</h3>
+            <div class="form-group">
+                <input type="text" class="input-premium" id="diary-judul" placeholder="Judul Cerita Hari Ini...">
+                <textarea class="input-premium" id="diary-isi" rows="3" placeholder="Tuliskan momen berhargamu dengannya disini..." style="resize: none;"></textarea>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <select class="input-premium" id="diary-mood" style="flex: 1;">
+                        <option value="😊 Happy">😊 Happy</option>
+                        <option value="🥰 Romantic">🥰 Romantic</option>
+                        <option value="😢 Sad">😢 Sad</option>
+                        <option value="🤪 Funny">🤪 Funny</option>
+                    </select>
+                    <input type="date" class="input-premium" id="diary-tanggal" style="flex: 1;">
+                </div>
+                <input type="text" class="input-premium" id="diary-foto-link" placeholder="Nama file foto kenangan (e.g. foto-couple.jpg)">
+                <button class="btn-action active-press v7-ripple-btn" onclick="saveDiaryEntry()">Simpan Lembar Diary</button>
+            </div>
+        </div>
+
+        <div class="glass-card premium-glass" style="margin-bottom: 12px; padding: 16px;">
+            <h4 style="font-size: 13px; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">🔍 Cari Lembaran Kisah Lalu</h4>
+            <div class="search-container" style="margin-top: 0; margin-bottom: 0;">
+                <input type="text" class="input-premium" id="input-diary-search" placeholder="Ketik kata kunci atau judul cerita..." style="flex: 1; padding: 12px;" oninput="filterDiaries()">
+                <button class="btn-calendar-trigger active-press v7-ripple-btn">
+                    📅
+                    <input type="date" class="hidden-date-picker" id="search-diary-date" onchange="filterDiaryByCalendar(this.value)">
+                </button>
+            </div>
+            <div id="diary-filter-active-status" class="active-filter-badge" style="margin-top: 8px; margin-bottom: 0;">
+                <span id="diary-filter-status-text">Filter Tanggal Aktif</span>
+                <span onclick="resetDiaryCalendarFilter()" style="cursor: pointer; font-weight: bold; text-decoration: underline;">Reset ✕</span>
+            </div>
+        </div>
+        <div id="dom-diary-container"></div>
+    </div>
+
+    <div class="app-page v7-card-anim" id="page-memories">
+        <div class="glass-card premium-glass">
+            <h3>📖 Our Story & Relationship Timeline</h3>
+            <p style="font-size:11px; color:var(--text-muted); margin-bottom:15px;">Lembaran perjalanan kronologis cinta kasih kita berdua.</p>
+            <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:15px;">
+                <input type="text" id="v7-story-title" class="input-premium" placeholder="Nama Milestone Cerita (e.g., Pertama Kali Bertemu)">
+                <input type="date" id="v7-story-date" class="input-premium">
+                <textarea id="v7-story-desc" class="input-premium" rows="2" placeholder="Detail deskripsi kenangan manis..."></textarea>
+                <button class="btn-action v7-ripple-btn" onclick="v7SaveRelationshipStory()" style="padding:10px; font-size:13px;">Abadikan Milestone Cerita</button>
+            </div>
+            <div id="v7-relationship-timeline-container" style="position:relative; padding-left:20px; border-left:2px dashed rgba(255,96,126,0.3); display:flex; flex-direction:column; gap:16px;"></div>
+        </div>
+
+        <div class="glass-card premium-glass">
+            <h3>📸 Memory Photo Gallery</h3>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <input type="text" class="input-premium" id="gal-link" placeholder="Tulis nama file foto (e.g. foto-couple.jpg)">
+                <input type="text" class="input-premium" id="gal-caption" placeholder="Beri Caption Foto Kenangan...">
+                <button class="btn-action active-press v7-ripple-btn" onclick="saveGalleryItem()">Upload ke Galeri</button>
+            </div>
+            <div class="gallery-grid" id="dom-gallery-container"></div>
+        </div>
+
+        <div class="glass-card premium-glass">
+            <h3>💫 Impian & Wishlist Kita</h3>
+            <div id="dom-wishlist-container" style="margin: 15px 0;"></div>
+            <div class="form-group">
+                <input type="text" class="input-premium" id="wish-nama" placeholder="Nama Impian (e.g. Liburan ke Bali)">
+                <input type="number" class="input-premium" id="wish-target" placeholder="Target Dana Impian (Rp)">
+                <button class="btn-action active-press v7-ripple-btn" onclick="saveWishlistItem()" style="background: linear-gradient(135deg, #00d26a, #00a352);">Tambah Impian</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-page v7-card-anim" id="page-achievement">
+        <div class="glass-card premium-glass">
+            <h3>🏆 Milestone & Penghargaan Otomatis</h3>
+            <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 15px;">Dapatkan lencana eksklusif seiring berkembangnya tabungan Anda berdua.</p>
+            <div id="dom-achievement-container" style="display: flex; flex-direction: column; gap: 10px;"></div>
+        </div>
+        
+        <div class="glass-card premium-glass">
+            <h3>📅 Kalender Aktivitas & Heatmap</h3>
+            <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 10px;">Intensitas komitmen hubungan Anda bulan ini:</p>
+            <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;" id="dom-heatmap-grid"></div>
+        </div>
+
+        <div class="glass-card premium-glass">
+            <h3>📅 Kalender Penuh Aktivitas Pasangan</h3>
+            <p style="font-size:11px; color:var(--text-muted); margin-bottom:10px;" id="v7-calendar-month-label">Bulan Ini</p>
+            <div class="v7-calendar-wrapper" id="v7-full-calendar-container"></div>
+        </div>
+    </div>
+
+    <div class="app-page v7-card-anim" id="page-settings">
+        <div class="glass-card premium-glass">
+            <h3>🎨 Kustomisasi Tema Premium</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px;">
+                <button class="btn-select active v7-ripple-btn" onclick="applyAppTheme('purple')">🟣 Romantic Purple</button>
+                <button class="btn-select v7-ripple-btn" onclick="applyAppTheme('galaxy')">🌌 Deep Galaxy</button>
+                <button class="btn-select v7-ripple-btn" onclick="applyAppTheme('sakura')">🌸 Pink Sakura</button>
+                <button class="btn-select v7-ripple-btn" onclick="applyAppTheme('ocean')">🌊 Blue Ocean</button>
+                <button class="btn-select v7-ripple-btn" style="grid-column: span 2" onclick="applyAppTheme('midnight')">🕶️ Midnight Carbon</button>
+            </div>
+        </div>
+
+        <div class="glass-card premium-glass">
+            <h3>⚙️ Pengaturan Profil Pasangan</h3>
+            <div class="form-group">
+                <input type="text" class="input-premium" id="set-couple-name" placeholder="Nama Pasangan (e.g. Daffa & Khaira)">
+                <input type="text" class="input-premium" id="set-quote" placeholder="Quote Hubungan">
+                <input type="text" class="input-premium" id="set-cover" placeholder="Nama file Banner (e.g. foto-couple.jpg)">
+                <input type="text" class="input-premium" id="set-pfp-daffa" placeholder="Nama file Foto Daffa (e.g. foto-daffa.jpg)">
+                <input type="text" class="input-premium" id="set-pfp-khaira" placeholder="Nama file Foto Khaira (e.g. foto-khaira.jpg)">
+                <input type="number" class="input-premium" id="set-target-all" placeholder="Target Tabungan Utama (Rp)">
+                <button class="btn-action active-press v7-ripple-btn" onclick="saveProfileSettings()" style="background: linear-gradient(135deg, #38b6ff, #0072ff);">Perbarui Data Profil</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="toast-box" id="global-toast-node">Notifikasi Berhasil! ✨</div>
+
+<div class="fullscreen-modal" id="global-modal-preview" onclick="this.style.display='none'">
+    <img id="global-modal-img" src="" alt="Fullscreen">
+</div>
+
+<nav class="bottom-nav">
+    <div class="nav-item active" onclick="navigateToPage('home', this)">
+        <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Home
+    </div>
+    <div class="nav-item" onclick="navigateToPage('savings', this)">
+        <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2-.9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5 0.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>Savings
+    </div>
+    <div class="nav-item" onclick="navigateToPage('diary', this)">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>Diary
+    </div>
+    <div class="nav-item" onclick="navigateToPage('memories', this)">
+        <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>Memories
+    </div>
+    <div class="nav-item" onclick="navigateToPage('achievement', this)">
+        <svg viewBox="0 0 24 24"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.98 5.98 0 0 0 11 15.9V19H7v2h10v-2h-4v-3.1a5.98 5.98 0 0 0 5.61-3.96C21.08 11.63 23 9.55 23 7V7c0-1.1-.9-2-2-2zm-12 5c-1.1 0-2-.9-2-2V7h2v3zm11-2c0 1.1-.9 2-2 2V7h2v1z"/></svg>Awards
+    </div>
+    <div class="nav-item" onclick="navigateToPage('settings', this)">
+        <svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49-.12-.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>Settings
+    </div>
+</nav>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBwWZzicW8mTWQZT6KZn_LNJB6iYwsJIVo",
+        authDomain: "our-saving-daffa-khaira.firebaseapp.com",
+        databaseURL: "https://our-saving-daffa-khaira-default-rtdb.firebaseio.com/",
+        projectId: "our-saving-daffa-khaira",
+        storageBucket: "our-saving-daffa-khaira.firebasestorage.app",
+        messagingSenderId: "201018236115",
+        appId: "1:201018236115:web:49a687c670d51c8bc64826"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let appGlobalState = {
+        targetUtama: 10000000,
+        txType: 'masuk',
+        txUser: 'Daffa',
+        financials: [],
+        diaries: [],
+        gallery: [],
+        wishlist: [],
+        profile: {},
+        loveNotes: [],
+        currentCalendarFilter: "",
+        currentDiaryCalendarFilter: "", 
+        v7Stories: [],
+        v7ActiveTheme: 'purple',
+        v7PinBuffer: ""
+    };
+
+    let isAudioPlaying = false;
+
+    window.addEventListener('DOMContentLoaded', () => {
+        setupFallingHearts();
+        const todayString = new Date().toISOString().substring(0, 10);
+        document.getElementById('tx-tanggal').value = todayString;
+        document.getElementById('diary-tanggal').value = todayString;
+        
+        generateActivityHeatmap();
+        connectFirebaseRealtime();
+
+        v7InitInteractiveCanvas();
+        v7SetupRippleTriggers();
+        v7SecurityCheckGate();
+
+        setTimeout(() => {
+            const splash = document.getElementById('splash-screen');
+            splash.style.opacity = 0;
+            setTimeout(() => splash.style.display = 'none', 600);
+        }, 1800);
+    });
+
+    // SISTEM PANCINGAN AUDIO (AUTOPLAY HOOK AMAN)
+    window.addEventListener('click', () => {
+        const audio = document.getElementById('global-audio-player');
+        if (audio && audio.paused && !window.audioInitDone) {
+            audio.play().then(() => {
+                isAudioPlaying = true;
+                document.getElementById('music-node').innerText = "🎵";
+                if(document.getElementById('v7-music-play-btn')) {
+                    document.getElementById('v7-music-play-btn').innerText = "⏸️";
+                }
+            }).catch(()=>{});
+            window.audioInitDone = true;
+        }
+    }, { once: true });
+
+    function navigateToPage(pageId, element) {
+        document.querySelectorAll('.app-page').forEach(page => page.classList.remove('active-page'));
+        document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+        
+        document.getElementById(`page-${pageId}`).classList.add('active-page');
+        element.classList.add('active');
+    }
+
+    function showNotificationToast(message) {
+        const toast = document.getElementById('global-toast-node');
+        toast.innerText = message;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    function setupFallingHearts() {
+        const container = document.getElementById('live-hearts-container');
+        const symbols = ['❤️', '💖', '💕', '🌸', '✨'];
+        container.innerHTML = ''; 
+        for (let i = 0; i < 15; i++) {
+            let heart = document.createElement('div');
+            heart.className = 'falling-heart';
+            heart.innerText = symbols[Math.floor(Math.random() * symbols.length)];
+            heart.style.left = Math.random() * 100 + 'vw';
+            heart.style.animationDelay = Math.random() * 4 + 's';
+            heart.style.animationDuration = Math.random() * 6 + 4 + 's';
+            container.appendChild(heart);
+        }
+    }
+
+    function connectFirebaseRealtime() {
+        db.ref('tabungan_couple/').on('value', snapshot => {
+            appGlobalState.financials = [];
+            snapshot.forEach(child => {
+                let data = child.val();
+                data.id = child.key;
+                appGlobalState.financials.push(data);
+            });
+            processAndRenderAll();
+        });
+
+        db.ref('couple_diary/').on('value', snapshot => {
+            appGlobalState.diaries = [];
+            snapshot.forEach(child => {
+                let data = child.val();
+                data.id = child.key;
+                appGlobalState.diaries.push(data);
+            });
+            executeCombinedDiaryFilter();
+            v7BuildInteractiveGridCalendar();
+        });
+
+        db.ref('memory_gallery/').on('value', snapshot => {
+            appGlobalState.gallery = [];
+            snapshot.forEach(child => {
+                let data = child.val();
+                data.id = child.key;
+                appGlobalState.gallery.push(data);
+            });
+            renderGallery();
+        });
+
+        db.ref('couple_wishlist/').on('value', snapshot => {
+            appGlobalState.wishlist = [];
+            snapshot.forEach(child => {
+                let data = child.val();
+                data.id = child.key;
+                appGlobalState.wishlist.push(data);
+            });
+            renderWishlists();
+        });
+
+        db.ref('app_settings_profile/').on('value', snapshot => {
+            if(snapshot.exists()) {
+                appGlobalState.profile = snapshot.val();
+                applyProfileDOM();
+            }
+        });
+
+        db.ref('v7_relationship_stories/').on('value', snapshot => {
+            appGlobalState.v7Stories = [];
+            snapshot.forEach(child => {
+                let data = child.val();
+                data.id = child.key;
+                appGlobalState.v7Stories.push(data);
+            });
+            v7RenderRelationshipTimeline();
+        });
+    }
+
+    function processAndRenderAll() {
+        let totalDaffa = 0, totalKhaira = 0, totalKeluar = 0;
+        let depositCount = 0;
+        
+        appGlobalState.financials.forEach(item => {
+            if(item.tipe === 'keluar') {
+                totalKeluar += parseFloat(item.nominal || 0);
+            } else {
+                depositCount++;
+                if(item.siapa === 'Daffa') totalDaffa += parseFloat(item.nominal || 0);
+                if(item.siapa === 'Khaira') totalKhaira += parseFloat(item.nominal || 0);
+            }
+        });
+
+        let totalBersama = (totalDaffa + totalKhaira) - totalKeluar;
+        if(totalBersama < 0) totalBersama = 0;
+
+        document.getElementById('dom-total-all').innerText = 'Rp ' + totalBersama.toLocaleString('id-ID');
+        document.getElementById('dom-total-df').innerText = 'Rp ' + totalDaffa.toLocaleString('id-ID');
+        document.getElementById('dom-total-kh').innerText = 'Rp ' + totalKhaira.toLocaleString('id-ID');
+
+        let totalMasuk = totalDaffa + totalKhaira;
+        let pctDf = totalMasuk > 0 ? (totalDaffa / totalMasuk) * 100 : 50;
+        let pctKh = totalMasuk > 0 ? (totalKhaira / totalMasuk) * 100 : 50;
+        
+        document.getElementById('dom-vs-df').style.width = pctDf + '%';
+        document.getElementById('dom-vs-kh').style.width = pctKh + '%';
+
+        let targetValue = appGlobalState.targetUtama;
+        let pctTarget = (totalBersama / targetValue) * 100;
+        document.getElementById('dom-cd-target').innerText = pctTarget.toFixed(1) + '%';
+
+        let annivDate = new Date(new Date().getFullYear(), 2, 17); 
+        if(new Date() > annivDate) annivDate.setFullYear(annivDate.getFullYear() + 1);
+        let daysLeft = Math.ceil((annivDate - new Date()) / (1000 * 60 * 60 * 24));
+        document.getElementById('dom-cd-anniv').innerText = daysLeft + " Hari Lagi";
+
+        let avgDeposit = depositCount > 0 ? (totalMasuk / depositCount) : 0;
+        document.getElementById('v7-widget-avg-deposit').innerText = 'Rp ' + Math.round(avgDeposit).toLocaleString('id-ID');
+        document.getElementById('v7-widget-total-expense').innerText = 'Rp ' + totalKeluar.toLocaleString('id-ID');
+
+        renderFinancials();
+        renderAchievements(totalBersama, appGlobalState.financials.length);
+        v7BuildInteractiveGridCalendar();
+    }
+
+    function renderFinancials() {
+        const container = document.getElementById('dom-financial-container');
+        const filterBulan = document.getElementById('f-bulan').value;
+        const filterTahun = document.getElementById('f-tahun').value;
+        container.innerHTML = '';
+
+        let filtered = appGlobalState.financials.filter(item => {
+            let d = new Date(item.tanggal);
+            let mMatch = filterBulan === 'all' || d.getMonth().toString() === filterBulan;
+            let yMatch = filterTahun === 'all' || d.getFullYear().toString() === filterTahun;
+            return mMatch && yMatch;
+        });
+
+        if(filtered.length === 0) {
+            container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">💸</div>Belum ada riwayat keuangan tercatat.</div>`;
+            return;
+        }
+
+        filtered.sort((a,b) => new Date(b.tanggal) - new Date(a.tanggal));
+
+        filtered.forEach(item => {
+            let isOut = item.tipe === 'keluar';
+            let color = isOut ? 'var(--accent-expense)' : (item.siapa === 'Daffa' ? 'var(--accent-daffa)' : 'var(--accent-khaira)');
+            let badge = isOut ? 'Keluar' : item.siapa;
+            
+            let card = document.createElement('div');
+            card.className = 'diary-card active-press';
+            card.style.display = 'flex';
+            card.style.justifyContent = 'space-between';
+            card.style.alignItems = 'center';
+            card.style.cursor = 'pointer';
+            card.setAttribute('onclick', `v7LaunchUniversalEditor('tabungan_couple', '${item.id}')`);
+            card.innerHTML = `
+                <div>
+                    <h4 style="font-size:14px;"><span style="color:${color}; font-weight:800; margin-right:6px;">[${badge}]</span>${item.catatan}</h4>
+                    <p style="font-size:11px; color:var(--text-muted); margin-top:3px;">📅 ${item.tanggal} <span style="font-size:10px; color:var(--accent-khaira); margin-left:5px;">⚙️ Edit</span></p>
+                </div>
+                <div style="font-weight:700; color:${color}">${isOut ? '-' : '+'} Rp ${parseFloat(item.nominal).toLocaleString('id-ID')}</div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function saveDiaryEntry() {
+        let judul = document.getElementById('diary-judul').value;
+        let isi = document.getElementById('diary-isi').value;
+        let mood = document.getElementById('diary-mood').value;
+        let tanggal = document.getElementById('diary-tanggal').value;
+        let foto = document.getElementById('diary-foto-link').value || 'foto-couple.jpg';
+
+        if(!judul || !isi) {
+            showNotificationToast("Lengkapi judul dan kisah diarymu! ❤️");
+            return;
+        }
+
+        db.ref('couple_diary/').push({ judul, isi, mood, tanggal, foto })
+        .then(() => {
+            showNotificationToast("Diary berhasil disimpan! 📝");
+            document.getElementById('diary-judul').value = '';
+            document.getElementById('diary-isi').value = '';
+            document.getElementById('diary-foto-link').value = '';
+            v7TriggerUnlockAnimation("📖 Lembaran Cerita Baru Ditulis!");
+        });
+    }
+
+    function filterDiaries() {
+        executeCombinedDiaryFilter();
+    }
+
+    function filterDiaryByCalendar(dateValue) {
+        if(!dateValue) return;
+        appGlobalState.currentDiaryCalendarFilter = dateValue;
+        const dateObj = new Date(dateValue);
+        const formatIndo = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+        
+        document.getElementById('diary-filter-status-text').innerText = `🔍 Tanggal Terpilih: ${formatIndo}`;
+        document.getElementById('diary-filter-active-status').style.display = 'flex';
+        executeCombinedDiaryFilter();
+    }
+
+    function resetDiaryCalendarFilter() {
+        appGlobalState.currentDiaryCalendarFilter = "";
+        document.getElementById('search-diary-date').value = "";
+        document.getElementById('diary-filter-active-status').style.display = 'none';
+        executeCombinedDiaryFilter();
+    }
+
+    function executeCombinedDiaryFilter() {
+        let textKeyword = document.getElementById('input-diary-search').value.toLowerCase();
+        let targetCalendarDate = appGlobalState.currentDiaryCalendarFilter;
+
+        let filtered = appGlobalState.diaries.filter(item => {
+            let matchesText = item.judul.toLowerCase().includes(textKeyword) || item.isi.toLowerCase().includes(textKeyword);
+            let matchesCalendar = true;
+            if(targetCalendarDate) {
+                matchesCalendar = (item.tanggal === targetCalendarDate);
+            }
+            return matchesText && matchesCalendar;
+        });
+        displayDiaries(filtered);
+    }
+
+    function displayDiaries(diariesList) {
+        const container = document.getElementById('dom-diary-container');
+        container.innerHTML = '';
+        
+        if(diariesList.length === 0) {
+            container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📖</div>Lembaran kisah tidak ditemukan. Coba ganti kata kunci atau tanggal!</div>`;
+            return;
+        }
+        diariesList.sort((a,b) => new Date(b.tanggal) - new Date(a.tanggal));
+        diariesList.forEach(item => {
+            let card = document.createElement('div');
+            card.className = 'diary-card active-press';
+            card.style.cursor = 'pointer';
+            card.setAttribute('onclick', `v7LaunchUniversalEditor('couple_diary', '${item.id}')`);
+            card.innerHTML = `
+                <div class="diary-meta">
+                    <span>📅 ${item.tanggal} <span style="color:var(--accent-daffa); font-weight:bold; margin-left:8px;">⚙️ Kelola</span></span>
+                    <span class="mood-badge">${item.mood}</span>
+                </div>
+                <h4 style="margin-bottom:6px; font-size:15px;">${item.judul}</h4>
+                <p style="font-size:13px; color:var(--text-muted); line-height:1.4;">${item.isi}</p>
+                ${item.foto ? `<div class="diary-media-grid"><img class="diary-img" src="${item.foto}" onclick="event.stopPropagation(); expandImagePreview('${item.foto}')"></div>` : ''}
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function saveGalleryItem() {
+        let link = document.getElementById('gal-link').value || 'foto-couple.jpg';
+        let caption = document.getElementById('gal-caption').value;
+        db.ref('memory_gallery/').push({ link, caption }).then(() => {
+            showNotificationToast("Foto masuk galeri! 📸");
+            document.getElementById('gal-link').value = '';
+            document.getElementById('gal-caption').value = '';
+        });
+    }
+
+    function renderGallery() {
+        const container = document.getElementById('dom-gallery-container');
+        container.innerHTML = '';
+        if(appGlobalState.gallery.length === 0) {
+            container.innerHTML = `<div style="grid-column: span 3" class="empty-state">Belum ada foto kenangan.</div>`;
+            return;
+        }
+        appGlobalState.gallery.forEach(item => {
+            let div = document.createElement('div');
+            div.className = 'gallery-item active-press';
+            div.setAttribute('oncontextmenu', `event.preventDefault(); v7LaunchUniversalEditor('memory_gallery', '${item.id}')`);
+            div.setAttribute('onclick', `expandImagePreview('${item.link}')`);
+            div.innerHTML = `<img src="${item.link}"><div style="position:absolute; bottom:0; background:rgba(0,0,0,0.6); width:100%; font-size:8px; text-align:center; padding:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.caption || ''}</div>`;
+            container.appendChild(div);
+        });
+    }
+
+    function expandImagePreview(url) {
+        document.getElementById('global-modal-img').src = url;
+        document.getElementById('global-modal-preview').style.display = 'flex';
+    }
+
+    function saveWishlistItem() {
+        let nama = document.getElementById('wish-nama').value;
+        let target = document.getElementById('wish-target').value;
+        if(!nama || !target) return;
+        db.ref('couple_wishlist/').push({ nama, target: parseFloat(target) }).then(() => {
+            document.getElementById('wish-nama').value = '';
+            document.getElementById('wish-target').value = '';
+            showNotificationToast("Wishlist ditambahkan! 💫");
+        });
+    }
+
+    function renderWishlists() {
+        const container = document.getElementById('dom-wishlist-container');
+        container.innerHTML = '';
+        if(appGlobalState.wishlist.length === 0) {
+            container.innerHTML = `<div class="empty-state">Belum ada target impian.</div>`;
+            return;
+        }
+        let currentBalance = parseFloat(document.getElementById('dom-total-all').innerText.replace(/[^0-9]/g, '')) || 0;
+        appGlobalState.wishlist.forEach(item => {
+            let pct = (currentBalance / item.target) * 100;
+            if(pct > 100) pct = 100;
+            let div = document.createElement('div');
+            div.className = 'wish-item active-press';
+            div.style.cursor = 'pointer';
+            div.setAttribute('onclick', `v7LaunchUniversalEditor('couple_wishlist', '${item.id}')`);
+            div.innerHTML = `
+                <div class="wish-header">
+                    <span>${item.nama} <span style="font-size:9px; color:var(--text-muted)">(Kelola)</span></span>
+                    <span style="color:var(--accent-khaira)">Rp ${item.target.toLocaleString('id-ID')}</span>
+                </div>
+                <div class="wish-bar"><div class="wish-fill" style="width:${pct}%"></div></div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function renderAchievements(currentSavings, totalTransactions) {
+        const container = document.getElementById('dom-achievement-container');
+        container.innerHTML = '';
+        const badges = [
+            { title: "🌱 Awal Langkah Cinta", desc: "Berhasil membuat transaksi pertama", cond: totalTransactions >= 1 },
+            { title: "💰 Komitmen Kokoh", desc: "Total saldo menggapai Rp 1.000.000+", cond: currentSavings >= 1000000 },
+            { title: "💎 Jutawan Romantis", desc: "Total dana menggapai Rp 5.000.000+", cond: currentSavings >= 5000000 },
+            { title: "👑 Cinta Sejati Terwujud", desc: "Mencapai target utama Rp 50.000.000", cond: currentSavings >= 10000000 }
+        ];
+        badges.forEach(badge => {
+            let div = document.createElement('div');
+            div.className = 'diary-card';
+            div.style.opacity = badge.cond ? '1' : '0.4';
+            div.style.borderLeft = badge.cond ? '4px solid var(--accent-joint)' : '4px solid rgba(255,255,255,0.1)';
+            div.innerHTML = `<h4 style="font-size:14px;">${badge.title} ${badge.cond ? '✅' : '🔒'}</h4><p style="font-size:11px; color:var(--text-muted); margin-top:2px;">${badge.desc}</p>`;
+            container.appendChild(div);
+        });
+    }
+
+    function switchTxType(type) {
+        appGlobalState.txType = type;
+        document.getElementById('ts-setor').classList.toggle('active', type === 'masuk');
+        document.getElementById('ts-tarik').classList.toggle('active', type === 'keluar');
+        document.getElementById('row-penyetor-shell').style.display = type === 'masuk' ? 'flex' : 'none';
+    }
+
+    function switchTxUser(user) {
+        appGlobalState.txUser = user;
+        document.getElementById('tp-daffa').classList.toggle('active', user === 'Daffa');
+        document.getElementById('tp-khaira').classList.toggle('active', user === 'Khaira');
+    }
+
+    function executeTxSave() {
+        let nominal = document.getElementById('tx-nominal').value;
+        let catatan = document.getElementById('tx-catatan').value;
+        let tanggal = document.getElementById('tx-tanggal').value;
+
+        if(!nominal || !catatan) return showNotificationToast("Harap isi nominal & catatan!");
+
+        db.ref('tabungan_couple/').push({
+            siapa: appGlobalState.txType === 'masuk' ? appGlobalState.txUser : 'Pengeluaran',
+            tipe: appGlobalState.txType,
+            nominal: parseFloat(nominal),
+            catatan,
+            tanggal
+        }).then(() => {
+            showNotificationToast("Transaksi tersimpan! 💸");
+            document.getElementById('tx-nominal').value = '';
+            document.getElementById('tx-catatan').value = '';
+            v7TriggerUnlockAnimation("💰 Transaksi Tabungan Berhasil Dicatat!");
+        });
+    }
+
+    function saveProfileSettings() {
+        let name = document.getElementById('set-couple-name').value;
+        let quote = document.getElementById('set-quote').value;
+        let cover = document.getElementById('set-cover').value;
+        let pfpDaffa = document.getElementById('set-pfp-daffa').value;
+        let pfpKhaira = document.getElementById('set-pfp-khaira').value;
+        let target = document.getElementById('set-target-all').value;
+
+        let payload = {};
+        if(name) payload.name = name;
+        if(quote) payload.quote = quote;
+        if(cover) payload.cover = cover;
+        if(pfpDaffa) payload.pfpDaffa = pfpDaffa;
+        if(pfpKhaira) payload.pfpKhaira = pfpKhaira;
+        if(target) payload.target = target;
+
+        db.ref('app_settings_profile/').update(payload).then(() => {
+            showNotificationToast("Profil berhasil diperbarui! ⚙️");
+        });
+    }
+
+    function applyProfileDOM() {
+        if(appGlobalState.profile.name) document.getElementById('dom-couple-name').innerText = appGlobalState.profile.name;
+        if(appGlobalState.profile.quote) document.getElementById('dom-couple-quote').innerText = appGlobalState.profile.quote;
+        
+        document.getElementById('dom-header-img').src = appGlobalState.profile.cover || 'foto-couple.jpg';
+        document.getElementById('dom-pfp-daffa').src = appGlobalState.profile.pfpDaffa || 'foto-daffa.jpg';
+        document.getElementById('dom-pfp-khaira').src = appGlobalState.profile.pfpKhaira || 'foto-khaira.jpg';
+
+        if(appGlobalState.profile.target) {
+            appGlobalState.targetUtama = parseFloat(appGlobalState.profile.target);
+            document.getElementById('dom-target-label').innerText = 'Rp ' + appGlobalState.targetUtama.toLocaleString('id-ID');
+        }
+    }
+
+    function applyAppTheme(themeName) {
+        document.documentElement.setAttribute('data-theme', themeName);
+        appGlobalState.v7ActiveTheme = themeName;
+        document.querySelectorAll('#page-settings .btn-select').forEach(btn => btn.classList.remove('active'));
+        showNotificationToast(`Tema berganti ke mode ${themeName.toUpperCase()}! 🎨`);
+    }
+
+    function generateActivityHeatmap() {
+        const grid = document.getElementById('dom-heatmap-grid');
+        if(!grid) return;
+        grid.innerHTML = '';
+        for (let i = 0; i < 28; i++) {
+            let opacity = [0.1, 0.3, 0.6, 0.9][Math.floor(Math.random() * 4)];
+            let dayBox = document.createElement('div');
+            dayBox.style.aspectRatio = '1';
+            dayBox.style.background = `rgba(0, 210, 106, ${opacity})`;
+            dayBox.style.borderRadius = '4px';
+            grid.appendChild(dayBox);
+        }
+    }
+
+    // PLAYLIST MANAGER
+    let v7PlaylistTracks = ['lagu-couple.mp3', 'love-theme.mp3', 'future-marriage.mp3'];
+    let v7CurrentTrackIdx = 0;
+    let v7IsShuffle = false;
+    let v7IsRepeat = false;
+
+    function handleMusicToggle() {
+        const audio = document.getElementById('global-audio-player');
+        const node = document.getElementById('music-node');
+        
+        if(!document.getElementById('v7-music-panel')) {
+            let panel = document.createElement('div');
+            panel.id = 'v7-music-panel';
+            panel.className = 'v7-music-bar glass-card premium-glass';
+            panel.style.position = 'fixed'; panel.style.bottom = '150px'; panel.style.right = '20px';
+            panel.style.width = '240px'; panel.style.zIndex = '1000'; panel.style.fontSize = '11px';
+            panel.innerHTML = `
+                <div style="font-weight:bold; margin-bottom:4px; display:flex; justify-content:space-between; width:100%;">
+                    <span>🎵 Playlist Player Premium</span>
+                    <span style="cursor:pointer; color:var(--accent-expense)" onclick="document.getElementById('v7-music-panel').remove()">✕</span>
+                </div>
+                <div style="display:flex; gap:6px; margin-bottom:6px; justify-content:center;">
+                    <button onclick="v7MusicPrev()" style="background:none; border:none; color:#fff; cursor:pointer;">⏮️</button>
+                    <button id="v7-music-play-btn" onclick="v7MusicPlayToggle()" style="background:none; border:none; color:#fff; cursor:pointer;">▶️</button>
+                    <button onclick="v7MusicNext()" style="background:none; border:none; color:#fff; cursor:pointer;">⏭️</button>
+                    <button id="v7-music-shuf" onclick="v7MusicShuffleToggle()" style="background:none; border:none; color:gray; cursor:pointer;">🔀</button>
+                    <button id="v7-music-rep" onclick="v7MusicRepeatToggle()" style="background:none; border:none; color:gray; cursor:pointer;">🔁</button>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+                    <span>Prog</span>
+                    <input type="range" id="v7-music-progress" class="v7-slider-premium" value="0" max="100" onchange="v7MusicSeek(this.value)">
+                </div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <span>Vol</span>
+                    <input type="range" class="v7-slider-premium" value="80" max="100" oninput="v7MusicSetVolume(this.value)">
+                </div>
+            `;
+            document.body.appendChild(panel);
+            
+            audio.addEventListener('timeupdate', () => {
+                if(audio.duration) {
+                    document.getElementById('v7-music-progress').value = (audio.currentTime / audio.duration) * 100;
+                }
+            });
+            audio.addEventListener('ended', () => {
+                if(v7IsRepeat) { audio.play(); } else { v7MusicNext(); }
+            });
+        }
+        v7MusicPlayToggle();
+    }
+
+    function v7MusicPlayToggle() {
+        const audio = document.getElementById('global-audio-player');
+        const node = document.getElementById('music-node');
+        const btn = document.getElementById('v7-music-play-btn');
+        if(!isAudioPlaying) {
+            audio.play().then(() => {
+                node.innerText = "🎵"; 
+                if(btn) btn.innerText = "⏸️";
+                isAudioPlaying = true;
+                showNotificationToast("Lagu Premium Diputar... 🎶");
+            }).catch(() => { showNotificationToast("Ketuk tombol play untuk memicu!"); });
+        } else {
+            audio.pause();
+            node.innerText = "🔇"; 
+            if(btn) btn.innerText = "▶️";
+            isAudioPlaying = false;
+        }
+    }
+    function v7MusicSetVolume(val) { document.getElementById('global-audio-player').volume = val / 100; }
+    function v7MusicSeek(val) {
+        const audio = document.getElementById('global-audio-player');
+        if(audio.duration) { audio.currentTime = (val / 100) * audio.duration; }
+    }
+    function v7MusicShuffleToggle() {
+        v7IsShuffle = !v7IsShuffle;
+        document.getElementById('v7-music-shuf').style.color = v7IsShuffle ? 'var(--accent-joint)' : 'gray';
+    }
+    function v7MusicRepeatToggle() {
+        v7IsRepeat = !v7IsRepeat;
+        document.getElementById('v7-music-rep').style.color = v7IsRepeat ? 'var(--accent-joint)' : 'gray';
+    }
+    function v7MusicNext() {
+        if(v7IsShuffle) { v7CurrentTrackIdx = Math.floor(Math.random() * v7PlaylistTracks.length); }
+        else { v7CurrentTrackIdx = (v7CurrentTrackIdx + 1) % v7PlaylistTracks.length; }
+        v7ChangeTrackSource();
+    }
+    function v7MusicPrev() {
+        v7CurrentTrackIdx = (v7CurrentTrackIdx - 1 + v7PlaylistTracks.length) % v7PlaylistTracks.length;
+        v7ChangeTrackSource();
+    }
+    function v7ChangeTrackSource() {
+        const audio = document.getElementById('global-audio-player');
+        audio.src = v7PlaylistTracks[v7CurrentTrackIdx];
+        const lastTime = localStorage.getItem("music_time");
+        if(lastTime){ audio.currentTime = parseFloat(lastTime); }
+        isAudioPlaying = false;
+        v7MusicPlayToggle();
+    }
+
+    function saveLoveNote() {
+        let text = document.getElementById('input-ln-text').value;
+        if(!text) return showNotificationToast("Isi dulu pesan cintanya! 🌸");
+        
+        const sekarang = new Date();
+        const opsiTanggal = { day: 'numeric', month: 'long' };
+        const stringTanggal = sekarang.toLocaleDateString('id-ID', opsiTanggal); 
+        const formatJam = sekarang.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace('.', ':');
+        
+        const waktuLengkap = `${stringTanggal}, ${formatJam}`;
+        const isoDateString = sekarang.toISOString().substring(0, 10);
+
+        db.ref('love_notes_node/').push({ 
+            text, 
+            timestamp: waktuLengkap,
+            searchKeyDate: isoDateString
+        })
+        .then(() => {
+            document.getElementById('input-ln-text').value = '';
+            showNotificationToast("Love note manis dikirim! 💌");
+        });
+    }
+
+    db.ref('love_notes_node/').on('value', snapshot => {
+        appGlobalState.loveNotes = [];
+        snapshot.forEach(child => {
+            let data = child.val();
+            data.id = child.key;
+            appGlobalState.loveNotes.push(data);
+        });
+        executeCombinedNotesFilter();
+    });
+
+    function filterLoveNotes() { executeCombinedNotesFilter(); }
+
+    function filterLoveNotesByCalendar(dateValue) {
+        if(!dateValue) return;
+        appGlobalState.currentCalendarFilter = dateValue;
+        const dateObj = new Date(dateValue);
+        const formatIndo = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+        document.getElementById('filter-status-text').innerText = `🔍 Menampilkan tanggal: ${formatIndo}`;
+        document.getElementById('filter-active-status').style.display = 'flex';
+        executeCombinedNotesFilter();
+    }
+
+    function resetCalendarFilter() {
+        appGlobalState.currentCalendarFilter = "";
+        document.getElementById('search-ln-date').value = "";
+        document.getElementById('filter-active-status').style.display = 'none';
+        executeCombinedNotesFilter();
+    }
+
+    function executeCombinedNotesFilter() {
+        let textKeyword = document.getElementById('input-ln-search').value.toLowerCase();
+        let targetCalendarDate = appGlobalState.currentCalendarFilter;
+
+        let filteredNotes = appGlobalState.loveNotes.filter(note => {
+            let matchesText = note.text.toLowerCase().includes(textKeyword) || note.timestamp.toLowerCase().includes(textKeyword);
+            let matchesCalendar = targetCalendarDate ? (note.searchKeyDate === targetCalendarDate) : true;
+            return matchesText && matchesCalendar;
+        });
+
+        displayLoveNotes(filteredNotes);
+    }
+
+    function displayLoveNotes(notesList) {
+        const listNode = document.getElementById('dom-lovenotes-list');
+        listNode.innerHTML = '';
+        if (notesList.length === 0) {
+            listNode.innerHTML = `<div style="font-size:11px; text-align:center; color:var(--text-muted); padding:15px; background:rgba(0,0,0,0.1); border-radius:12px;">Pesan tidak ditemukan... 🌸</div>`;
+            return;
+        }
+        let reversedNotes = [...notesList].reverse();
+        let isFiltering = (document.getElementById('input-ln-search').value.trim() !== "") || (appGlobalState.currentCalendarFilter !== "");
+        let finalDisplayList = isFiltering ? reversedNotes : reversedNotes.slice(0, 5);
+
+        finalDisplayList.forEach(data => {
+            let p = document.createElement('div');
+            p.className = 'active-press';
+            p.style.background = 'rgba(255,255,255,0.04)';
+            p.style.padding = '10px 14px';
+            p.style.borderRadius = '12px';
+            p.style.fontSize = '12px';
+            p.style.borderLeft = '3px solid var(--accent-khaira)';
+            p.style.cursor = 'pointer';
+            p.setAttribute('onclick', `v7LaunchUniversalEditor('love_notes_node', '${data.id}')`);
+            p.innerHTML = `✨ <b>${data.timestamp}</b>: ${data.text} <span style="font-size:9px; color:var(--text-muted);">[Ubah]</span>`;
+            listNode.appendChild(p);
+        });
+    }
+
+    // 1. PIN SECURITY ACCESS SYSTEM GATE
+    function v7SecurityCheckGate() {
+        const isUnlocked = sessionStorage.getItem("v7_app_unlocked");
+        if(isUnlocked === "true") {
+            document.getElementById("v7-security-screen").style.display = "none";
+        }
+    }
+    
+    function v7PressPin(num) {
+        if(appGlobalState.v7PinBuffer.length < 6) {
+            appGlobalState.v7PinBuffer += num;
+            document.getElementById(`v7-dot-${appGlobalState.v7PinBuffer.length - 1}`).classList.add('filled');
+        }
+        if(appGlobalState.v7PinBuffer.length === 6) {
+            setTimeout(() => {
+                if(appGlobalState.v7PinBuffer === "250326" || appGlobalState.v7PinBuffer === "170326") {
+                    showNotificationToast("Akses Terverifikasi! Selamat Datang Sayangg ✨");
+                    sessionStorage.setItem("v7_app_unlocked", "true");
+                    let secScreen = document.getElementById("v7-security-screen");
+                    secScreen.style.transform = "translateY(-100%)";
+                    
+                    // FIXED: Layar PIN dihapus total agar tidak bocor menutupi form input
+                    setTimeout(() => { secScreen.style.display = "none"; }, 500);
+                } else {
+                    showNotificationToast("PIN Salah! Coba lagi silakan ✕");
+                    v7ClearPin();
+                }
+            }, 250);
+        }
+    }
+    
+    function v7ClearPin() {
+        appGlobalState.v7PinBuffer = "";
+        for(let i=0; i<6; i++) { document.getElementById(`v7-dot-${i}`).classList.remove('filled'); }
+    }
+    
+    function v7DeletePin() {
+        if(appGlobalState.v7PinBuffer.length > 0) {
+            document.getElementById(`v7-dot-${appGlobalState.v7PinBuffer.length - 1}`).classList.remove('filled');
+            appGlobalState.v7PinBuffer = appGlobalState.v7PinBuffer.slice(0, -1);
+        }
+    }
+
+    // 2. INTERACTIVE CANVAS ANIMATION BACKGROUND
+    let v7CanvasCtx = null;
+    let v7ParticlesArray = [];
+    function v7InitInteractiveCanvas() {
+        const canvas = document.getElementById('v7-interactive-canvas');
+        if(!canvas) return;
+        v7CanvasCtx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        });
+
+        function animate() {
+            v7CanvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+            v7UpdateAndDrawParticles();
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        setInterval(v7SpawnThemeParticleEngine, 150);
+    }
+
+    function v7SpawnThemeParticleEngine() {
+        const theme = appGlobalState.v7ActiveTheme;
+        const w = window.innerWidth; const h = window.innerHeight;
+        let p = { x: Math.random() * w, y: h + 20, size: Math.random() * 5 + 2, speedY: -(Math.random() * 1.5 + 0.5), char: '✨', color: '#fff' };
+        
+        if(theme === 'purple') { p.char = '❤️'; p.color = 'rgba(255, 96, 126, 0.4)'; }
+        else if(theme === 'galaxy') { p.y = Math.random() * h; p.speedY = (Math.random() * 0.2); p.char = '⭐'; p.size = Math.random() * 3 + 1; }
+        else if(theme === 'sakura') { p.y = -20; p.x = Math.random() * w; p.speedY = (Math.random() * 1 + 0.5); p.speedX = (Math.random() * 0.5); p.char = '🌸'; }
+        else if(theme === 'ocean') { p.char = '🫧'; p.color = 'rgba(45, 212, 191, 0.3)'; p.speedY = -(Math.random() * 2 + 0.5); }
+        else if(theme === 'midnight') { p.char = '▪️'; p.color = 'rgba(255,255,255,0.05)'; p.y = Math.random() * h; p.speedY = -0.1; }
+
+        v7ParticlesArray.push(p);
+        if(v7ParticlesArray.length > 60) v7ParticlesArray.shift();
+    }
+
+    function v7UpdateAndDrawParticles() {
+        for(let i=0; i < v7ParticlesArray.length; i++) {
+            let p = v7ParticlesArray[i];
+            if(appGlobalState.v7ActiveTheme === 'sakura') { p.y += p.speedY; p.x += p.speedX; }
+            else { p.y += p.speedY; }
+            v7CanvasCtx.fillStyle = p.color;
+            v7CanvasCtx.font = `${p.size * 3}px Arial`;
+            v7CanvasCtx.fillText(p.char, p.x, p.y);
+        }
+    }
+
+    // 3. RIPPLE CLICK MACRO ENGINE
+    function v7SetupRippleTriggers() {
+        document.body.addEventListener('click', function(e) {
+            let target = e.target.closest('.v7-ripple-btn');
+            if (target) {
+                let ripple = document.createElement('span');
+                ripple.className = 'v7-ripple-span';
+                let rect = target.getBoundingClientRect();
+                let x = e.clientX - rect.left;
+                let y = e.clientY - rect.top;
+                ripple.style.left = `${x}px`; ripple.style.top = `${y}px`;
+                target.appendChild(ripple);
+                setTimeout(() => ripple.remove(), 500);
+            }
+        });
+    }
+
+    function v7OpenBottomSheet(id) { document.getElementById(id).classList.add('show'); }
+    function v7CloseBottomSheet(id) { document.getElementById(id).classList.remove('show'); }
+
+    function v7ExecuteGlobalSearch() {
+        let keyword = document.getElementById('v7-global-search-input').value.toLowerCase();
+        let resNode = document.getElementById('v7-global-search-results');
+        resNode.innerHTML = "";
+        if(!keyword) return;
+
+        let itemsFound = 0;
+        appGlobalState.financials.forEach(item => {
+            if(item.catatan.toLowerCase().includes(keyword)) {
+                itemsFound++;
+                resNode.innerHTML += `<div class="diary-card" style="font-size:12px;">📈 <b>[Uang]</b> ${item.catatan} - Rp ${item.nominal.toLocaleString('id-ID')} (${item.tanggal})</div>`;
+            }
+        });
+        appGlobalState.diaries.forEach(item => {
+            if(item.judul.toLowerCase().includes(keyword) || item.isi.toLowerCase().includes(keyword)) {
+                itemsFound++;
+                resNode.innerHTML += `<div class="diary-card" style="font-size:12px;">📖 <b>[Diary]</b> <b>${item.judul}</b>: ${item.isi.substring(0, 40)}...</div>`;
+            }
+        });
+
+        if(itemsFound === 0) { resNode.innerHTML = `<p style="text-align:center; color:var(--text-muted); font-size:12px;">Data tidak ditemukan.</p>`; }
+    }
+
+    function v7SaveRelationshipStory() {
+        let title = document.getElementById('v7-story-title').value;
+        let date = document.getElementById('v7-story-date').value;
+        let desc = document.getElementById('v7-story-desc').value;
+        if(!title || !date || !desc) return showNotificationToast("Isi kelengkapan data kisah!");
+
+        db.ref('v7_relationship_stories/').push({ title, date, desc }).then(() => {
+            document.getElementById('v7-story-title').value = "";
+            document.getElementById('v7-story-desc').value = "";
+            showNotificationToast("Milestone sejarah terukir abadi! 💖");
+        });
+    }
+    
+    function v7RenderRelationshipTimeline() {
+        const container = document.getElementById('v7-relationship-timeline-container');
+        container.innerHTML = "";
+        if(appGlobalState.v7Stories.length === 0) {
+            container.innerHTML = `<p style="font-size:11px; color:var(--text-muted);">Belum ada momen penting tersimpan.</p>`; return;
+        }
+        appGlobalState.v7Stories.sort((a,b) => new Date(a.date) - new Date(b.date));
+        appGlobalState.v7Stories.forEach(story => {
+            let block = document.createElement('div');
+            block.className = 'active-press';
+            block.style.cursor = 'pointer';
+            block.style.position = 'relative';
+            block.setAttribute('onclick', `v7LaunchUniversalEditor('v7_relationship_stories', '${story.id}')`);
+            block.innerHTML = `
+                <div style="position:absolute; left:-25px; top:5px; width:10px; height:10px; border-radius:50%; background:var(--accent-khaira); box-shadow:0 0 8px var(--accent-khaira);"></div>
+                <span style="font-size:10px; color:var(--text-muted); font-weight:700;">📅 ${story.date}</span>
+                <h4 style="font-size:13px; margin:2px 0; color:#fff;">${story.title}</h4>
+                <p style="font-size:11px; color:var(--text-muted); line-height:1.4;">${story.desc}</p>
+            `;
+            container.appendChild(block);
+        });
+    }
+
+    function v7BuildInteractiveGridCalendar() {
+        const container = document.getElementById('v7-full-calendar-container');
+        if(!container) return;
+        container.innerHTML = "";
+        
+        const sekarang = new Date();
+        const bulanIni = sekarang.getMonth(); const tahunIni = sekarang.getFullYear();
+        const namaBulan = sekarang.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+        document.getElementById('v7-calendar-month-label').innerText = `Kalender Berjalan: ${namaBulan}`;
+
+        const hariArr = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+        hariArr.forEach(h => {
+            let div = document.createElement('div'); div.className = 'v7-calendar-day-head'; div.innerText = h;
+            container.appendChild(div);
+        });
+
+        const tglPertama = new Date(tahunIni, bulanIni, 1).getDay();
+        const totalHari = new Date(tahunIni, bulanIni + 1, 0).getDate();
+
+        for(let i=0; i<tglPertama; i++) {
+            let blank = document.createElement('div'); container.appendChild(blank);
+        }
+
+        for(let day=1; day<=totalHari; day++) {
+            let dStr = `${tahunIni}-${String(bulanIni+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+            let cell = document.createElement('div');
+            cell.className = 'v7-calendar-cell'; cell.innerText = day;
+            if(day === sekarang.getDate()) cell.classList.add('v7-today');
+
+            let hasData = appGlobalState.diaries.some(item => item.tanggal === dStr);
+            if(hasData) {
+                cell.classList.add('v7-has-data');
+                let dot = document.createElement('div'); dot.className = 'v7-calendar-dot';
+                cell.appendChild(dot);
+            }
+
+            cell.onclick = () => {
+                filterDiaryByCalendar(dStr);
+                navigateToPage('diary', document.querySelectorAll('.nav-item')[2]);
+                showNotificationToast(`Membuka Riwayat Tanggal: ${dStr}`);
+            };
+            container.appendChild(cell);
+        }
+    }
+
+    // 9. UNIVERSAL DATA EDITOR AND REMOVER MODALITY ENGINE 
+    let v7CurrentEditingNode = "";
+    let v7CurrentEditingId = "";
+
+    function v7LaunchUniversalEditor(nodeName, recordId) {
+        v7CurrentEditingNode = nodeName; v7CurrentEditingId = recordId;
+        const fieldsNode = document.getElementById('v7-editor-form-fields');
+        fieldsNode.innerHTML = "";
+        
+        let recordObj = appGlobalState[v7GetStateKeyFromNode(nodeName)].find(x => x.id === recordId);
+        if(!recordObj && nodeName === 'v7_relationship_stories') recordObj = appGlobalState.v7Stories.find(x => x.id === recordId);
+        if(!recordObj) return;
+
+        document.getElementById('v7-editor-title').innerText = `✏️ Kelola Record: [${nodeName.toUpperCase()}]`;
+
+        Object.keys(recordObj).forEach(key => {
+            if(key === 'id' || key === 'searchKeyDate' || key === 'timestamp') return;
+            let val = recordObj[key];
+            fieldsNode.innerHTML += `
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                    <label style="font-size:10px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">${key}</label>
+                    <input type="text" id="v7-field-input-${key}" class="input-premium" value="${val}">
+                </div>
+            `;
+        });
+
+        document.getElementById('v7-editor-delete-btn').onclick = () => v7ExecuteUniversalDelete();
+        document.getElementById('v7-editor-save-btn').onclick = () => v7ExecuteUniversalSave(recordObj);
+
+        v7OpenBottomSheet('v7-sheet-editor');
+    }
+
+    function v7GetStateKeyFromNode(nodeName) {
+        switch(nodeName) {
+            case 'tabungan_couple': return 'financials';
+            case 'couple_diary': return 'diaries';
+            case 'memory_gallery': return 'gallery';
+            case 'couple_wishlist': return 'wishlist';
+            case 'love_notes_node': return 'loveNotes';
+            case 'v7_relationship_stories': return 'v7Stories';
+            default: return '';
+        }
+    }
+
+    function v7ExecuteUniversalDelete() {
+        if (!v7CurrentEditingNode || !v7CurrentEditingId) return;
+        if (confirm("Apakah kamu yakin ingin menghapus data ini secara permanen? 🥺")) {
+            db.ref(`${v7CurrentEditingNode}/${v7CurrentEditingId}`).remove()
+            .then(() => {
+                showNotificationToast("Data berhasil dihapus dari server cloud! 🗑️");
+                v7CloseBottomSheet('v7-sheet-editor');
+            })
+            .catch(err => showNotificationToast("Gagal menghapus: " + err.message));
+        }
+    }
+
+    function v7ExecuteUniversalSave(recordObj) {
+        if (!v7CurrentEditingNode || !v7CurrentEditingId) return;
+        let payload = {};
+        Object.keys(recordObj).forEach(key => {
+            if (key === 'id' || key === 'searchKeyDate' || key === 'timestamp') return;
+            let inputEl = document.getElementById(`v7-field-input-${key}`);
+            if (inputEl) {
+                let val = inputEl.value;
+                if (typeof recordObj[key] === 'number') {
+                    payload[key] = parseFloat(val) || 0;
+                } else {
+                    payload[key] = val;
+                }
+            }
+        });
+
+        db.ref(`${v7CurrentEditingNode}/${v7CurrentEditingId}`).update(payload)
+        .then(() => {
+            showNotificationToast("Data berhasil diperbarui secara realtime! ✨");
+            v7CloseBottomSheet('v7-sheet-editor');
+        })
+        .catch(err => showNotificationToast("Gagal memperbarui: " + err.message));
+    }
+
+    function v7TriggerUnlockAnimation(msg) {
+        showNotificationToast(msg);
+        if (typeof confetti === 'function') {
+            confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+        }
+    }
+
+    function v7ExportData(type) {
+        if (type === 'json') {
+            let backupData = {
+                financials: appGlobalState.financials,
+                diaries: appGlobalState.diaries,
+                gallery: appGlobalState.gallery,
+                wishlist: appGlobalState.wishlist,
+                profile: appGlobalState.profile,
+                v7Stories: appGlobalState.v7Stories,
+                loveNotes: appGlobalState.loveNotes
+            };
+            let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+            let downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `Our_Savings_Backup_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showNotificationToast("Raw Backup JSON berhasil diunduh! 📁");
+        } else if (type === 'excel') {
+            if (typeof XLSX === 'undefined') return showNotificationToast("Library Excel belum siap!");
+            let rows = appGlobalState.financials.map(item => ({
+                Tanggal: item.tanggal,
+                Kategori: item.tipe === 'keluar' ? 'Pengeluaran' : 'Pemasukan',
+                Penyetor: item.siapa,
+                Nominal: item.nominal,
+                Keterangan: item.catatan
+            }));
+            let worksheet = XLSX.utils.json_to_sheet(rows);
+            let workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Riwayat Keuangan");
+            XLSX.writeFile(workbook, `Our_Savings_Financials_${new Date().toISOString().slice(0,10)}.xlsx`);
+            showNotificationToast("File Excel berhasil diexport! 📊");
+        } else if (type === 'pdf') {
+            if (typeof html2pdf === 'undefined') return showNotificationToast("Library PDF belum siap!");
+            let element = document.getElementById('v7-printable-area');
+            let opt = {
+                margin: 10,
+                filename: `Our_Savings_Report_${new Date().toISOString().slice(0,10)}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(element).save();
+            showNotificationToast("Laporan PDF berhasil digenerate! 📄");
+        }
+    }
+
+    function v7ImportDataEngine() {
+        let fileField = document.getElementById('v7-import-file-field');
+        if (!fileField || !fileField.files[0]) return showNotificationToast("Pilih file JSON terlebih dahulu! 📥");
+        
+        let file = fileField.files[0];
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                let importedData = JSON.parse(e.target.result);
+                if (confirm("Apakah kamu yakin ingin menimpa data Cloud dengan data dari file backup ini? ⚠️")) {
+                    if (importedData.financials) {
+                        db.ref('tabungan_couple/').remove();
+                        importedData.financials.forEach(x => { let id = x.id; delete x.id; db.ref('tabungan_couple/').child(id).set(x); });
+                    }
+                    if (importedData.diaries) {
+                        db.ref('couple_diary/').remove();
+                        importedData.diaries.forEach(x => { let id = x.id; delete x.id; db.ref('couple_diary/').child(id).set(x); });
+                    }
+                    if (importedData.gallery) {
+                        db.ref('memory_gallery/').remove();
+                        importedData.gallery.forEach(x => { let id = x.id; delete x.id; db.ref('memory_gallery/').child(id).set(x); });
+                    }
+                    if (importedData.wishlist) {
+                        db.ref('couple_wishlist/').remove();
+                        importedData.wishlist.forEach(x => { let id = x.id; delete x.id; db.ref('couple_wishlist/').child(id).set(x); });
+                    }
+                    if (importedData.profile) {
+                        db.ref('app_settings_profile/').set(importedData.profile);
+                    }
+                    if (importedData.v7Stories) {
+                        db.ref('v7_relationship_stories/').remove();
+                        importedData.v7Stories.forEach(x => { let id = x.id; delete x.id; db.ref('v7_relationship_stories/').child(id).set(x); });
+                    }
+                    if (importedData.loveNotes) {
+                        db.ref('love_notes_node/').remove();
+                        importedData.loveNotes.forEach(x => { let id = x.id; delete x.id; db.ref('love_notes_node/').child(id).set(x); });
+                    }
+                    showNotificationToast("Restore Berhasil! Sinkronisasi cloud selesai. 🔄");
+                }
+            } catch(err) {
+                showNotificationToast("Gagal membaca file JSON: File rusak atau tidak valid! ✕");
+            }
+        };
+        reader.readAsText(file);
+    }
+</script>
+</body>
+</html>
